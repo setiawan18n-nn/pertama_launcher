@@ -1,0 +1,753 @@
+settings.gradle
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "TropicalTVLauncher"
+include ':app'
+build.gradle (Project level)
+// Top-level build file
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+    id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
+}
+gradle.properties
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+kotlin.code.style=official
+app/build.gradle
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.tropical.tvlauncher'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.tropical.tvlauncher"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.leanback:leanback:1.0.0'
+    implementation 'com.google.android.material:material:1.12.0'
+
+    // Image loading
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    // Networking untuk jadwal sholat
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.11.0'
+
+    // Coroutines
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+}
+app/proguard-rules.pro
+# Keep Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class * extends com.bumptech.glide.module.AppGlideModule {
+ <init>(...);
+}
+3) Manifest
+app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:banner="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TropicalTVLauncher"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:stateNotNeeded="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+Catatan: Setelah install, kamu bisa set launcher ini jadi default HOME di Android TV (Settings > Home screen / Preferred launcher).
+
+4) Resources
+app/src/main/res/values/strings.xml
+<resources>
+    <string name="app_name">Tropical TV Launcher</string>
+    <string name="prayer_nearest">Waktu Sholat Terdekat: %1$s - %2$s WIB (%3$s)</string>
+    <string name="prayer_loading">Memuat jadwal sholat Karawang...</string>
+    <string name="wifi_connected">WiFi Terhubung</string>
+    <string name="wifi_disconnected">WiFi Tidak Terhubung</string>
+    <string name="settings">Pengaturan</string>
+</resources>
+app/src/main/res/values/colors.xml
+<resources>
+    <color name="black_overlay">#66000000</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#E0E0E0</color>
+</resources>
+app/src/main/res/values/themes.xml
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.TropicalTVLauncher" parent="Theme.Leanback">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>
+app/src/main/res/drawable/ic_settings.xml
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94c0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58C4.84,11.36 4.8,11.69 4.8,12s0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6s3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z" />
+</vector>
+app/src/main/res/drawable/ic_wifi.xml
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M1,9l2,2c4.97,-4.97 13.03,-4.97 18,0l2,-2C16.93,2.93 7.08,2.93 1,9zM9,17l3,3 3,-3c-1.65,-1.66 -4.34,-1.66 -6,0zM5,13l2,2c2.76,-2.76 7.24,-2.76 10,0l2,-2C15.14,9.14 8.87,9.14 5,13z" />
+</vector>
+app/src/main/res/drawable/ic_wifi_off.xml
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M23.64,7c-0.45,-0.34 -4.93,-4 -11.64,-4 -1.5,0 -2.89,0.19 -4.15,0.48L18.18,13.8 23.64,7zM17.04,15.22L3.27,1.44 2,2.72l2.05,2.06C1.91,5.76 0.59,6.82 0.36,7l11.63,14.49 0.01,0.01 0.01,-0.01 3.9,-4.86 3.32,3.32 1.27,-1.27 -3.46,-3.46z" />
+</vector>
+5) Layout
+app/src/main/res/layout/activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!-- Background Slideshow -->
+    <ImageView
+        android:id="@+id/bgImageView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Dark overlay for readability -->
+    <View
+        android:id="@+id/overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/black_overlay"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Top Left: Jadwal Sholat Karawang -->
+    <TextView
+        android:id="@+id/tvPrayerInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="32dp"
+        android:fontFamily="sans-serif-medium"
+        android:shadowColor="#000000"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="4"
+        android:text="@string/prayer_loading"
+        android:textColor="@color/text_primary"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Top Right: Settings & WiFi -->
+    <LinearLayout
+        android:id="@+id/topRightContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="48dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/ivWifi"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="24dp"
+            android:contentDescription="@string/wifi_connected"
+            android:focusable="false"
+            android:src="@drawable/ic_wifi" />
+
+        <ImageView
+            android:id="@+id/ivSettings"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/settings"
+            android:focusable="true"
+            android:nextFocusDown="@id/rvAppsRow1"
+            android:nextFocusLeft="@id/ivSettings"
+            android:nextFocusRight="@id/ivSettings"
+            android:nextFocusUp="@id/ivSettings"
+            android:src="@drawable/ic_settings" />
+    </LinearLayout>
+
+    <!-- Center: Hari & Jam -->
+    <LinearLayout
+        android:id="@+id/centerTimeContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.38">
+
+        <TextView
+            android:id="@+id/tvDayDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:shadowColor="#000000"
+            android:shadowDx="3"
+            android:shadowDy="3"
+            android:shadowRadius="6"
+            android:textColor="@color/text_primary"
+            android:textSize="42sp"
+            tools:text="Senin, 03 November 2026" />
+
+        <TextView
+            android:id="@+id/tvClock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="sans-serif-thin"
+            android:shadowColor="#000000"
+            android:shadowDx="4"
+            android:shadowDy="4"
+            android:shadowRadius="8"
+            android:textColor="@color/text_primary"
+            android:textSize="120sp"
+            tools:text="14:23" />
+    </LinearLayout>
+
+    <!-- Bottom: 2 Rows x 5 Apps -->
+    <LinearLayout
+        android:id="@+id/appsContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
+        android:layout_marginBottom="48dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAppsRow1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:focusable="true"
+            android:nextFocusDown="@id/rvAppsRow2"
+            android:nextFocusUp="@id/ivSettings"
+            android:overScrollMode="never"
+            tools:itemCount="5"
+            tools:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            tools:spanCount="5"
+            tools:listitem="@layout/item_app" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAppsRow2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:clipToPadding="false"
+            android:focusable="true"
+            android:nextFocusDown="@null"
+            android:nextFocusUp="@id/rvAppsRow1"
+            android:overScrollMode="never"
+            tools:itemCount="5"
+            tools:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            tools:spanCount="5"
+            tools:listitem="@layout/item_app" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+app/src/main/res/layout/item_app.xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="12dp"
+    android:background="?attr/selectableItemBackgroundBorderless"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <ImageView
+        android:id="@+id/ivAppIcon"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:contentDescription="@null"
+        android:scaleType="fitCenter"
+        tools:src="@mipmap/ic_launcher" />
+
+    <TextView
+        android:id="@+id/tvAppName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:shadowColor="#000000"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="3"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        tools:text="Nama Aplikasi" />
+</LinearLayout>
+6) Kotlin Code
+app/src/main/java/com/tropical/tvlauncher/utils/PrayerTimeUtils.kt
+package com.tropical.tvlauncher.utils
+
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+data class Prayer(
+    val name: String,
+    val time: String,
+    val dateTime: Long
+)
+
+object PrayerTimeUtils {
+    private val client = OkHttpClient()
+    private const val BASE_URL = "https://api.myquran.com/v2/sholat/jadwal"
+
+    // ID Kota Karawang (MyQuran)
+    private const val KARAWANG_CITY_ID = "1609"
+
+    suspend fun getNearestPrayerForKarawang(): Pair<String, String> = withContext(Dispatchers.IO) {
+        try {
+            val sdf = SimpleDateFormat("yyyy/MM/dd", Locale("id", "ID"))
+            val today = sdf.format(Date())
+            val url = "$BASE_URL/$KARAWANG_CITY_ID/$today"
+
+            val request = Request.Builder().url(url).get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: return@withContext Pair("Imsak", "--:--")
+
+            val json = JsonParser.parseString(body).asJsonObject
+            val data = json.getAsJsonObject("data")
+            val jadwal = data.getAsJsonObject("jadwal")
+
+            val now = Calendar.getInstance()
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+            val list = listOf(
+                Prayer("Imsak", jadwal.get("imsak").asString, toMillis(jadwal.get("imsak").asString)),
+                Prayer("Subuh", jadwal.get("subuh").asString, toMillis(jadwal.get("subuh").asString)),
+                Prayer("Terbit", jadwal.get("terbit").asString, toMillis(jadwal.get("terbit").asString)),
+                Prayer("Dhuha", jadwal.get("dhuha").asString, toMillis(jadwal.get("dhuha").asString)),
+                Prayer("Dzuhur", jadwal.get("dzuhur").asString, toMillis(jadwal.get("dzuhur").asString)),
+                Prayer("Ashar", jadwal.get("ashar").asString, toMillis(jadwal.get("ashar").asString)),
+                Prayer("Maghrib", jadwal.get("maghrib").asString, toMillis(jadwal.get("maghrib").asString)),
+                Prayer("Isya", jadwal.get("isya").asString, toMillis(jadwal.get("isya").asString))
+            )
+
+            val currentMillis = now.timeInMillis
+            val next = list.firstOrNull { it.dateTime > currentMillis } ?: list.first()
+
+            val diffMillis = next.dateTime - currentMillis
+            val diffMinutes = if (diffMillis > 0) (diffMillis / 60000).toInt() else 0
+            val hoursLeft = diffMinutes / 60
+            val minsLeft = diffMinutes % 60
+
+            val countdown = when {
+                hoursLeft > 0 && minsLeft > 0 -> "${hoursLeft}j ${minsLeft}m lagi"
+                hoursLeft > 0 -> "${hoursLeft}j lagi"
+                else -> "${minsLeft}m lagi"
+            }
+
+            Pair(next.name, "${next.time} | $countdown")
+        } catch (e: Exception) {
+            Pair("Dzuhur", "--:-- | cek koneksi")
+        }
+    }
+
+    private fun toMillis(timeStr: String): Long {
+        val parts = timeStr.split(":")
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, parts[0].toInt())
+        cal.set(Calendar.MINUTE, parts[1].toInt())
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+}
+app/src/main/java/com/tropical/tvlauncher/adapter/AppListAdapter.kt
+package com.tropical.tvlauncher.adapter
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ResolveInfo
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.tropical.tvlauncher.R
+
+class AppListAdapter(
+    private val context: Context,
+    private val apps: List<ResolveInfo>
+) : RecyclerView.Adapter<AppListAdapter.AppViewHolder>() {
+
+    inner class AppViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val icon: ImageView = itemView.findViewById(R.id.ivAppIcon)
+        val name: TextView = itemView.findViewById(R.id.tvAppName)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
+        val view = LayoutInflater.from(context).inflate(R.layout.item_app, parent, false)
+        return AppViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
+        val app = apps[position]
+        val pm = context.packageManager
+        holder.icon.setImageDrawable(app.activityInfo.loadIcon(pm))
+        holder.name.text = app.loadLabel(pm)
+
+        holder.itemView.setOnClickListener {
+            val intent = pm.getLaunchIntentForPackage(app.activityInfo.packageName)
+            intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        }
+
+        // Fokus untuk navigasi remote TV
+        holder.itemView.isFocusable = true
+        holder.itemView.isFocusableInTouchMode = true
+    }
+
+    override fun getItemCount(): Int = apps.size
+}
+app/src/main/java/com/tropical/tvlauncher/MainActivity.kt
+package com.tropical.tvlauncher
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ResolveInfo
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.tropical.tvlauncher.adapter.AppListAdapter
+import com.tropical.tvlauncher.utils.PrayerTimeUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Timer
+import java.util.TimerTask
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var bgImageView: ImageView
+    private lateinit var tvPrayerInfo: TextView
+    private lateinit var ivWifi: ImageView
+    private lateinit var ivSettings: ImageView
+    private lateinit var tvDayDate: TextView
+    private lateinit var tvClock: TextView
+    private lateinit var rvAppsRow1: RecyclerView
+    private lateinit var rvAppsRow2: RecyclerView
+
+    private val backgroundList = listOf(
+        R.drawable.bg_mountain_1,
+        R.drawable.bg_mountain_2,
+        R.drawable.bg_mountain_3,
+        R.drawable.bg_mountain_4,
+        R.drawable.bg_mountain_5
+    )
+
+    private var currentBgIndex = 0
+    private val bgHandler = Handler(Looper.getMainLooper())
+    private val bgRunnable = object : Runnable {
+        override fun run() {
+            showNextBackground()
+            bgHandler.postDelayed(this, 5 * 60 * 1000) // ganti tiap 5 menit
+        }
+    }
+
+    private val clockHandler = Handler(Looper.getMainLooper())
+    private val clockRunnable = object : Runnable {
+        override fun run() {
+            updateClock()
+            clockHandler.postDelayed(this, 1000)
+        }
+    }
+
+    private val prayerScope = CoroutineScope(Dispatchers.Main + Job())
+
+    private val wifiReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            updateWifiStatus()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        initViews()
+        setupBackground()
+        setupClock()
+        setupWifi()
+        setupSettings()
+        loadPrayerTimes()
+        loadInstalledApps()
+    }
+
+    private fun initViews() {
+        bgImageView = findViewById(R.id.bgImageView)
+        tvPrayerInfo = findViewById(R.id.tvPrayerInfo)
+        ivWifi = findViewById(R.id.ivWifi)
+        ivSettings = findViewById(R.id.ivSettings)
+        tvDayDate = findViewById(R.id.tvDayDate)
+        tvClock = findViewById(R.id.tvClock)
+        rvAppsRow1 = findViewById(R.id.rvAppsRow1)
+        rvAppsRow2 = findViewById(R.id.rvAppsRow2)
+    }
+
+    private fun setupBackground() {
+        showNextBackground()
+        bgHandler.postDelayed(bgRunnable, 5 * 60 * 1000)
+    }
+
+    private fun showNextBackground() {
+        if (backgroundList.isEmpty()) return
+        currentBgIndex = (currentBgIndex + 1) % backgroundList.size
+        Glide.with(this)
+            .load(backgroundList[currentBgIndex])
+            .centerCrop()
+            .into(bgImageView)
+    }
+
+    private fun setupClock() {
+        updateClock()
+        clockHandler.postDelayed(clockRunnable, 1000)
+    }
+
+    private fun updateClock() {
+        val now = Date()
+        val dayDateFormat = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID"))
+        val clockFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        tvDayDate.text = dayDateFormat.format(now)
+        tvClock.text = clockFormat.format(now)
+    }
+
+    private fun setupWifi() {
+        updateWifiStatus()
+        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        registerReceiver(wifiReceiver, filter)
+    }
+
+    private fun updateWifiStatus() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        var connected = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = cm.activeNetwork
+            val caps = cm.getNetworkCapabilities(network)
+            connected = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true ||
+                    caps?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true
+        } else {
+            val networkInfo = cm.activeNetworkInfo
+            connected = networkInfo?.isConnected == true
+        }
+        if (connected) {
+            ivWifi.setImageResource(R.drawable.ic_wifi)
+            ivWifi.contentDescription = getString(R.string.wifi_connected)
+        } else {
+            ivWifi.setImageResource(R.drawable.ic_wifi_off)
+            ivWifi.contentDescription = getString(R.string.wifi_disconnected)
+        }
+    }
+
+    private fun setupSettings() {
+        ivSettings.setOnClickListener {
+            val intent = Intent(Settings.ACTION_SETTINGS)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+        ivSettings.setOnFocusChangeListener { v, hasFocus ->
+            v.scaleX = if (hasFocus) 1.15f else 1.0f
+            v.scaleY = if (hasFocus) 1.15f else 1.0f
+        }
+    }
+
+    private fun loadPrayerTimes() {
+        prayerScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                PrayerTimeUtils.getNearestPrayerForKarawang()
+            }
+            tvPrayerInfo.text = getString(R.string.prayer_nearest, result.first, result.second.split(" | ")[0], result.second.split(" | ").getOrElse(1) { "" })
+        }
+        // Refresh tiap 60 detik biar countdown tetap akurat
+        val timer = Timer()
+        timer.scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+                prayerScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        PrayerTimeUtils.getNearestPrayerForKarawang()
+                    }
+                    runOnUiThread {
+                        tvPrayerInfo.text = getString(R.string.prayer_nearest, result.first, result.second.split(" | ")[0], result.second.split(" | ").getOrElse(1) { "" })
+                    }
+                }
+            }
+        }, 60000, 60000)
+    }
+
+    private fun loadInstalledApps() {
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val pm = packageManager
+        val apps = pm.queryIntentActivities(intent, 0)
+            .sortedBy { it.loadLabel(pm).toString().lowercase(Locale.getDefault()) }
+
+        val list1 = apps.take(5)
+        val list2 = apps.drop(5).take(5)
+
+        rvAppsRow1.layoutManager = GridLayoutManager(this, 5)
+        rvAppsRow1.adapter = AppListAdapter(this, list1)
+
+        rvAppsRow2.layoutManager = GridLayoutManager(this, 5)
+        rvAppsRow2.adapter = AppListAdapter(this, list2)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        bgHandler.removeCallbacks(bgRunnable)
+        clockHandler.removeCallbacks(clockRunnable)
+        try {
+            unregisterReceiver(wifiReceiver)
+        } catch (e: Exception) {
+        }
+    }
+}
